@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookmarks - Scientific Paper Explorer{% endblock %}
+
+{% block head %}
+<style>
+    .bookmark-card {
+        border-left: 4px solid var(--primary);
+    }
+    
+    .bookmark-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .bookmark-title {
+        font-size: 1.75rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 0;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: var(--gray-400);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 1rem;
+    }
+    
+    /* Popup box */
+.popup-inner {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Close button */
+.close-btn {
+  position: sticky;
+  top: 0;
+  right: 0;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  align-self: flex-end;
+  margin-bottom: 10px;
+}
+
+/* Popup Content */
+.popup-content h2 {
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+
+.popup-content p {
+  margin-bottom: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* View Full Paper Button */
+.view-paper-btn {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.view-paper-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive Mobile */
+@media (max-width: 600px) {
+  .popup-inner {
+    max-width: 95%;
+    padding: 15px;
+  }
+
+  .popup-content h2 {
+    font-size: 20px;
+  }
+
+  .popup-content p {
+    font-size: 14px;
+  }
+
+  .view-paper-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container results-container">
+    <div class="bookmark-header">
+        <h1 class="bookmark-title">My Bookmarked Papers</h1>
+        {% if bookmarks %}
+        <button id="delete-all-bookmarks" class="btn btn-outline">
+            <i class="fas fa-trash"></i> Delete All
+        </button>
+        {% endif %}
+    </div>
+    
+    {% if bookmarks %}
+    <div class="results-grid">
+        {% for paper in bookmarks %}
+        <div class="card paper-card bookmark-card">
+            <div class="card-header">
+                <h3 class="card-title truncate">{{ paper.title }}</h3>
+                <span class="paper-badge source">{{ paper.source }}</span>
+                {% if paper.year %}
+                <span class="paper-badge year">{{ paper.year }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                <div class="card-meta mb-2">
+                    <i class="fas fa-user-edit"></i> {{ paper.authors[:100] + '...' if paper.authors|length > 100 else paper.authors }}
+                </div>
+                
+                <p class="card-text truncate-multi">{{ paper.abstract }}</p>
+                <button class="expand-abstract">Read more</button>
+            </div>
+            
+            <div class="card-footer">
+                <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-outline">
+                    <i class="fas fa-external-link-alt"></i> View
+                </a>
+                
+                <button class="delete-bookmark" data-title="{{ paper.title }}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    
+    <div id="popup-card" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+        <div class="popup-inner">
+          <button id="close-popup" class="close-btn">X</button>
+          <div id="popup-content" class="popup-content">
+            <!-- dynamic content here -->
+          </div>
+        </div>
+      </div>
+
+
+    {% else %}
+    <div class="empty-state">
+        <i class="far fa-bookmark"></i>
+        <h3>No Bookmarks Yet</h3>
+        <p>You haven't bookmarked any papers yet. Start exploring papers and bookmark the ones you find interesting!</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Start Exploring</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize delete bookmark functionality
+        initializeDeleteBookmarks();
+        
+        // Initialize expandable abstracts
+        initializeExpandableAbstracts();
+    });
+</script>
+<script>
+    document.querySelectorAll('.expand-abstract').forEach(button => {
+        button.addEventListener('click', function() {
+            const card = button.closest('.paper-card');
+            const title = card.querySelector('.card-title')?.innerText.trim() || '';
+            const authors = card.querySelector('.card-meta')?.innerText.trim() || '';
+            const abstract = card.querySelector('.card-text')?.innerText.trim() || '';
+            const source = card.dataset.source?.trim() || '';
+            const year = card.dataset.year?.trim() || '';
+            const viewLink = card.querySelector('.card-footer a')?.href || '#';
+    
+            const contentHtml = `
+                <div style="padding:10px;">
+                    <h2>${title}</h2>
+                    <p><strong>Authors:</strong> ${authors}</p>
+                    <p><strong>Source:</strong> ${source}</p>
+                    <p><strong>Year:</strong> ${year}</p>
+                    <a href="${viewLink}" target="_blank" class="view-paper-btn">View Full Paper</a>
+                    <p><strong>Abstract:</strong><br>${abstract}</p>
+                </div>
+            `;
+    
+            document.getElementById('popup-content').innerHTML = contentHtml;
+            document.getElementById('popup-card').style.display = 'flex';
+        });
+    });
+    
+    document.getElementById('close-popup').addEventListener('click', function() {
+        document.getElementById('popup-card').style.display = 'none';
+    });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% endblock %}

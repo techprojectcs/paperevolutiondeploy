@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Scientific Paper Explorer{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}"> <!-- Favicon -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- For network visualization -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- For timeline visualization -->
+    <script src="https://unpkg.com/vis-timeline/standalone/umd/vis-timeline.min.js"></script>
+    <script src="https://unpkg.com/vis-data/standalone/umd/vis-data.min.js"></script>
+    {% block head %}{% endblock %}
+    
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-container">
+            <a href="{{ url_for('index') }}" class="navbar-logo">
+                <i class="fas fa-project-diagram"></i>
+                PaperEvolution
+            </a>
+            
+            <button class="mobile-toggle" id="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+           
+            <div class="navbar-links">
+               
+            </div>
+            
+            <div class="navbar-auth">
+             
+                {% if session.user %}
+                <span>Welcome, {{ session.user }}</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline">Logout</a>
+                <a href="{{ url_for('bookmarks') }}" class="btn btn-sm btn-outline">My Bookmarks</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-sm btn-primary">Register</a>
+                {% endif %}
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="d-flex justify-between align-center">
+                <p class="fot">&copy; 2025 TPC Projects. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/visualizations.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

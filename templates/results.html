@@ -1,0 +1,526 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Scientific Paper Explorer{% endblock %}
+
+{% block head %}
+<style>
+    .paper-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+    
+    .paper-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-section {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: var(--gray-100);
+        border-radius: var(--radius);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .paper-card .card-body {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .paper-card .card-footer {
+        margin-top: auto;
+    }
+    
+    .paper-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .paper-badge.source {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary);
+    }
+    
+    .paper-badge.year {
+        background-color: rgba(var(--secondary-rgb), 0.1);
+        color: var(--secondary);
+    }
+    
+    .expand-abstract {
+        background: none;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: inline-block;
+    }
+    
+    .charts-container {
+        margin: 2rem 0;
+    }
+    
+    .chart-wrapper {
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    
+    .source-filter, .year-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .filter-chip {
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        background-color: var(--gray-200);
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.875rem;
+    }
+    
+    .filter-chip:hover, .filter-chip.active {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .glassy-card {
+        backdrop-filter: blur(10px);
+        background-color: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .dark-mode .glassy-card {
+        background-color: rgba(33, 37, 41, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Animation for card loading */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .results-grid .card {
+        animation: fadeIn 0.4s ease forwards;
+    }
+    
+    .results-grid .card:nth-child(2) { animation-delay: 0.05s; }
+    .results-grid .card:nth-child(3) { animation-delay: 0.1s; }
+    .results-grid .card:nth-child(4) { animation-delay: 0.15s; }
+    .results-grid .card:nth-child(5) { animation-delay: 0.2s; }
+    .results-grid .card:nth-child(6) { animation-delay: 0.25s; }
+    .results-grid .card:nth-child(7) { animation-delay: 0.3s; }
+    .results-grid .card:nth-child(8) { animation-delay: 0.35s; }
+    
+    .visualization-tabs {
+        display: flex;
+        margin-bottom: 1rem;
+    }
+    
+    .visualization-tab {
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: var(--transition);
+    }
+    
+    .visualization-tab.active {
+        border-bottom-color: var(--primary);
+        color: var(--primary);
+        font-weight: 500;
+    }
+    
+    .visualization-content {
+        display: none;
+    }
+    
+    .visualization-content.active {
+        display: block;
+    }
+
+    /* Popup box */
+.popup-inner {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Close button */
+.close-btn {
+  position: sticky;
+  top: 0;
+  right: 0;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  align-self: flex-end;
+  margin-bottom: 10px;
+}
+
+/* Popup Content */
+.popup-content h2 {
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+
+.popup-content p {
+  margin-bottom: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* View Full Paper Button */
+.view-paper-btn {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.view-paper-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive Mobile */
+@media (max-width: 600px) {
+  .popup-inner {
+    max-width: 95%;
+    padding: 15px;
+  }
+
+  .popup-content h2 {
+    font-size: 20px;
+  }
+
+  .popup-content p {
+    font-size: 14px;
+  }
+
+  .view-paper-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container results-container">
+    <div class="results-header">
+        <h1 class="results-title">Search Results</h1>
+        <div class="results-actions">
+            <button id="download-csv" class="btn btn-outline">
+                <i class="fas fa-download"></i> Export
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-search"></i> New Search
+            </a>
+            <a href="{{ url_for('bookmarks') }}" class="btn btn-primary">
+                <i class="far fa-bookmark"></i> My bookmark
+            </a>
+        </div>
+    </div>
+
+    <!-- Visualizations Section -->
+    <div class="charts-container">
+        <h2 class="mb-3">Paper Analysis</h2>
+        
+        <div class="visualization-tabs"> 
+            <div class="visualization-tab active" data-target="charts">Charts</div>
+    <!--        <div class="visualization-tab" data-target="network">Network</div>
+            <div class="visualization-tab" data-target="timeline">Timeline</div> -->
+        </div>
+        
+        <div class="visualization-content active" id="charts-content">
+            <div class="charts-row">
+                <div class="chart-container">
+                    <canvas id="sourceChart" data-labels="{{ source_labels|tojson }}" data-values="{{ source_counts|tojson }}"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="yearChart" data-labels="{{ year_labels|tojson }}" data-values="{{ year_counts|tojson }}"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="visualization-content" id="network-content">
+            <div class="chart-container">
+                <canvas id="sourceChart" data-labels="{{ source_labels|tojson }}" data-values="{{ source_counts|tojson }}"></canvas>
+            </div>
+        </div>
+        
+        <div class="visualization-content" id="timeline-content">
+            <div class="chart-container">
+                <canvas id="yearChart" data-labels="{{ year_labels|tojson }}" data-values="{{ year_counts|tojson }}"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Section -->
+    <div class="filter-section">
+        <h3 class="mb-2">Filter Results</h3>
+        
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label">Sources</label>
+                <div class="source-filter">
+                    {% for source in source_labels %}
+                    <span class="filter-chip" data-filter="source" data-value="{{ source }}">{{ source }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label">Years</label>
+                <div class="year-filter">
+                    {% for year in year_labels %}
+                    <span class="filter-chip" data-filter="year" data-value="{{ year }}">{{ year }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Papers Grid -->
+    <div class="results-grid">
+        {% for paper in papers %}
+        <div class="card paper-card" 
+     data-source="{{ paper.source }}" 
+     data-year="{{ paper.year }}"
+     data-authors="{{ paper.authors }}"
+     data-abstract="{{ paper.abstract }}">
+  <div class="card-header">
+    <h3 class="card-title truncate">{{ paper.title }}</h3>
+    <span class="paper-badge source">{{ paper.source }}</span>
+    {% if paper.year %}
+    <span class="paper-badge year">{{ paper.year }}</span>
+    {% endif %}
+  </div>
+
+            
+            <div class="card-body">
+                <div class="card-meta mb-2">
+                    <i class="fas fa-user-edit"></i> {{ paper.authors[:100] + '...' if paper.authors|length > 100 else paper.authors }}
+                </div>
+                
+                <p class="card-text truncate-multi">{{ paper.abstract }}</p>
+                <button class="expand-abstract">Read more</button>
+            </div>
+            
+            <div class="card-footer">
+                <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-outline">
+                    <i class="fas fa-external-link-alt"></i> View
+                </a>
+                
+                <button class="bookmark-btn" data-paper='{{ paper|tojson }}'>
+                    <i class="far fa-bookmark"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="popup-card" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+        <div class="popup-inner">
+          <button id="close-popup" class="close-btn">X</button>
+          <div id="popup-content" class="popup-content">
+            <!-- dynamic content here -->
+          </div>
+        </div>
+      </div>
+    
+    <!-- Pagination -->
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('results', page=page-1) }}" class="pagination-item">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+        
+        <span class="pagination-item active">{{ page }}</span>
+        
+        {% if papers|length > 0 %}
+        <a href="{{ url_for('results', page=page+1) }}" class="pagination-item">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle filter chips
+        const filterChips = document.querySelectorAll('.filter-chip');
+        const paperCards = document.querySelectorAll('.paper-card');
+        
+        let activeFilters = {
+            source: [],
+            year: []
+        };
+        
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                const filter = this.dataset.filter;
+                const value = this.dataset.value;
+                
+                this.classList.toggle('active');
+                
+                if (this.classList.contains('active')) {
+                    activeFilters[filter].push(value);
+                } else {
+                    activeFilters[filter] = activeFilters[filter].filter(v => v !== value);
+                }
+                
+                // Apply filters
+                paperCards.forEach(card => {
+                    const cardSource = card.dataset.source;
+                    const cardYear = card.dataset.year;
+                    
+                    const sourceMatch = activeFilters.source.length === 0 || activeFilters.source.includes(cardSource);
+                    const yearMatch = activeFilters.year.length === 0 || activeFilters.year.includes(cardYear);
+                    
+                    if (sourceMatch && yearMatch) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Visualization tabs
+        const tabs = document.querySelectorAll('.visualization-tab');
+        const contents = document.querySelectorAll('.visualization-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const target = this.dataset.target;
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update active content
+                contents.forEach(c => c.classList.remove('active'));
+                document.getElementById(`${target}-content`).classList.add('active');
+            });
+        });
+    });
+</script>
+
+<script>
+    const sourceChart = new Chart(document.getElementById("sourceChart"), {
+        type: 'bar',
+        data: {
+            labels: {{ source_labels | tojson }},
+            datasets: [{
+                label: 'Source Count',
+                data: {{ source_counts | tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)'
+            }]
+        }
+    });
+</script>
+
+<script>
+    const yearChart = new Chart(document.getElementById("yearChart"), {
+        type: 'line',
+        data: {
+            labels: {{ year_labels | tojson }},
+            datasets: [{
+                label: 'Papers per Year',
+                data: {{ year_counts | tojson }},
+                borderColor: 'rgba(255, 99, 132, 1)',
+                fill: false
+            }]
+        }
+    });
+</script>
+
+
+<script>
+    document.getElementById('download-csv').addEventListener('click', function() {
+        const cards = document.querySelectorAll('.paper-card');
+        let csvContent = "Title,Authors,Abstract,Source,Year\n";
+    
+        cards.forEach(card => {
+            const title = card.querySelector('.card-title')?.innerText.trim().replace(/"/g, '""') || '';
+            const authors = card.dataset.authors?.trim().replace(/"/g, '""') || '';
+            const abstract = card.dataset.abstract?.trim().replace(/"/g, '""') || '';
+            const source = card.dataset.source?.trim().replace(/"/g, '""') || '';
+            const year = card.dataset.year?.trim().replace(/"/g, '""') || '';
+    
+            csvContent += `"${title}","${authors}","${abstract}","${source}","${year}"\n`;
+        });
+    
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.setAttribute('href', URL.createObjectURL(blob));
+        link.setAttribute('download', 'papers.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    </script>
+    <script>
+        document.querySelectorAll('.expand-abstract').forEach(button => {
+            button.addEventListener('click', function() {
+                const card = button.closest('.paper-card');
+                const title = card.querySelector('.card-title')?.innerText.trim() || '';
+                const authors = card.querySelector('.card-meta')?.innerText.trim() || '';
+                const abstract = card.querySelector('.card-text')?.innerText.trim() || '';
+                const source = card.dataset.source?.trim() || '';
+                const year = card.dataset.year?.trim() || '';
+                const viewLink = card.querySelector('.card-footer a')?.href || '#';
+        
+                const contentHtml = `
+                    <div style="padding:10px;">
+                        <h2>${title}</h2>
+                        <p><strong>Authors:</strong> ${authors}</p>
+                        <p><strong>Source:</strong> ${source}</p>
+                        <p><strong>Year:</strong> ${year}</p>
+                        <a href="${viewLink}" target="_blank" class="view-paper-btn">View Full Paper</a>
+                        <p><strong>Abstract:</strong><br>${abstract}</p>
+                    </div>
+                `;
+        
+                document.getElementById('popup-content').innerHTML = contentHtml;
+                document.getElementById('popup-card').style.display = 'flex';
+            });
+        });
+        
+        document.getElementById('close-popup').addEventListener('click', function() {
+            document.getElementById('popup-card').style.display = 'none';
+        });
+        </script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{
+    "tpcprojects.com": [
+        {
+            "abstract": "Foreseeing the [::evolution::] of brain connectivity between anatomical regions from a baseline observation can propel early disease diagnosis and clinical decision making. Such task becomes challenging when learning from multiple decentralized datasets with missing timepoints (e.g., datasets collected from different hospitals with a varying sequence of acquisitions). Federated learning (FL) is an...",
+            "authors": "Zeynep G\u00fcrler, Islem Rekik",
+            "publisher": "IEEE Transactions on Medical Imaging",
+            "source": "IEEE Xplore",
+            "title": "Federated Brain Graph Evolution Prediction Using Decentralized Connectivity Datasets With Temporally-Varying Acquisitions",
+            "url": "https://ieeexplore.ieee.org/document/9964305/",
+            "year": "2023"
+        }
+    ]
+}
